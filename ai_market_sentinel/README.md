@@ -1,6 +1,6 @@
 # AI Market Sentinel — GenLayer
 
-A decentralised market-alert contract deployed on **GenLayer Studionet**. Users register a crypto asset and a plain-English intent; a pool of validator nodes fetches live market data, runs multi-LLM consensus, and writes a final `TRIGGERED` or `PENDING` verdict back on-chain.
+A decentralised market-alert contract deployed on **GenLayer Studionet**. Users register a crypto asset, and a plain-English intent; a pool of validator nodes fetches live market data, runs multi-LLM consensus, and writes a final `TRIGGERED` or `PENDING` verdict back on-chain.
 
 ---
 
