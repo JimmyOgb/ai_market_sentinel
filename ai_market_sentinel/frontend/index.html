@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI MARKET SENTINEL — GenLayer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:   #050508;
+  --black2:  #090910;
+  --black3:  #0f0f18;
+  --panel:   #0a0a12;
+  --border:  #1a1a2e;
+  --border2: #22223a;
+  --lime:    #00ff88;
+  --lime2:   #00cc6a;
+  --lime-dim:#003322;
+  --magenta: #ff0080;
+  --mag-dim: #330020;
+  --cyan:    #00d4ff;
+  --cyan-dim:#002233;
+  --amber:   #ffaa00;
+  --amb-dim: #332200;
+  --red:     #ff3344;
+  --red-dim: #330011;
+  --text:    #c8d8c0;
+  --text2:   #687860;
+  --text3:   #383830;
+  --mono:    'Share Tech Mono', monospace;
+  --display: 'Orbitron', monospace;
+  --body:    'Rajdhani', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px}
+body{background:var(--black);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden;cursor:crosshair}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,136,.015) 3px,rgba(0,255,136,.015) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:.3;pointer-events:none;z-index:0}
+
+/* HEADER */
+.header{position:sticky;top:0;z-index:100;background:var(--black2);border-bottom:1px solid var(--lime-dim);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:48px;box-shadow:0 0 30px rgba(0,255,136,.05)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-mark{width:34px;height:34px;border:1px solid var(--lime);display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(0,255,136,.3),inset 0 0 12px rgba(0,255,136,.05)}
+.logo-mark::before{content:'◈';color:var(--lime);font-size:16px;animation:logo-pulse 2s ease-in-out infinite}
+@keyframes logo-pulse{0%,100%{opacity:1;text-shadow:0 0 8px var(--lime)}50%{opacity:.5;text-shadow:none}}
+.logo-text{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.15em;color:var(--lime);text-shadow:0 0 10px rgba(0,255,136,.5)}
+.logo-sub{font-size:9px;color:var(--text2);letter-spacing:.1em;margin-top:1px}
+
+.ticker-strip{display:flex;gap:0;overflow:hidden}
+.ticker-item{padding:0 16px;border-left:1px solid var(--border);text-align:center;cursor:default;transition:background .15s;min-width:90px}
+.ticker-item:hover{background:rgba(0,255,136,.03)}
+.ticker-label{font-size:9px;color:var(--text2);letter-spacing:.08em}
+.ticker-val{font-size:12px;margin-top:2px;font-weight:bold;transition:color .3s}
+.ticker-chg{font-size:9px;margin-top:1px}
+.up{color:var(--lime)}
+.dn{color:var(--red)}
+.neu{color:var(--text2)}
+
+.header-right{display:flex;align-items:center;gap:16px;font-size:10px;color:var(--text2)}
+.node-status{display:flex;align-items:center;gap:6px}
+.node-dot{width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime);animation:blink 1.4s ease-in-out infinite}
+.ws-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);transition:all .5s}
+.ws-dot.live{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.ws-dot.err{background:var(--red)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.clock{color:var(--lime);font-size:11px;letter-spacing:.08em}
+
+/* LAYOUT */
+.app{position:relative;z-index:1;display:grid;grid-template-columns:200px 1fr 300px;height:calc(100vh - 48px)}
+
+/* SIDEBAR */
+.sidebar{border-right:1px solid var(--border2);background:var(--black2);display:flex;flex-direction:column;padding:1rem 0;overflow-y:auto}
+.sidebar-section{margin-bottom:1.5rem}
+.sidebar-label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);padding:0 1rem 6px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 1rem;cursor:pointer;color:var(--text2);font-size:11px;letter-spacing:.04em;border-left:2px solid transparent;transition:all .15s;user-select:none}
+.nav-item:hover{color:var(--lime);background:rgba(0,255,136,.03)}
+.nav-item.active{color:var(--lime);border-left-color:var(--lime);background:rgba(0,255,136,.05);text-shadow:0 0 8px rgba(0,255,136,.3)}
+.nav-sym{font-size:13px;width:16px;text-align:center}
+.sb-divider{height:1px;background:var(--border);margin:.5rem 1rem}
+.stat-list{padding:0 1rem;display:flex;flex-direction:column;gap:6px}
+.stat-row{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;padding:5px 8px;border:1px solid var(--border);background:var(--black3)}
+.stat-k{color:var(--text2)}
+.stat-v{color:var(--lime);font-size:12px;font-weight:bold}
+.stat-v.mag{color:var(--magenta)}
+.stat-v.amb{color:var(--amber)}
+
+/* MAIN */
+.main{overflow-y:auto;background:var(--black)}
+.panel{display:none;padding:1.25rem}
+.panel.active{display:block}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:1.25rem;border-bottom:1px solid var(--border2)}
+.ph-left{display:flex;align-items:baseline;gap:12px}
+.ph-title{font-family:var(--display);font-size:13px;font-weight:700;color:var(--lime);letter-spacing:.1em;text-shadow:0 0 10px rgba(0,255,136,.3)}
+.ph-cmd{font-size:10px;color:var(--text2);letter-spacing:.06em}
+.ph-badge{font-size:9px;padding:2px 8px;border:1px solid var(--lime-dim);color:var(--lime2);letter-spacing:.08em}
+
+/* FORM */
+.form-block{background:var(--panel);border:1px solid var(--border2);padding:1.25rem;margin-bottom:1rem;position:relative}
+.form-block::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--lime),transparent)}
+.fb-title{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text2);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.fb-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.field{margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+.field-label{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);margin-bottom:5px}
+.field input,.field textarea,.field select{width:100%;background:var(--black);border:1px solid var(--border2);color:var(--lime);font-family:var(--mono);font-size:11px;padding:8px 10px;outline:none;transition:all .15s;letter-spacing:.04em}
+.field input:focus,.field textarea:focus{border-color:var(--lime);box-shadow:0 0 0 1px rgba(0,255,136,.15),0 0 12px rgba(0,255,136,.08);background:var(--black3)}
+.field textarea{resize:vertical;min-height:70px;line-height:1.6}
+.field input::placeholder,.field textarea::placeholder{color:var(--text3);font-style:italic;letter-spacing:0}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 18px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;cursor:pointer;border:1px solid;background:transparent;text-transform:uppercase;transition:all .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.3;cursor:not-allowed;transform:none!important}
+.btn-lime{color:var(--lime);border-color:var(--lime2);box-shadow:0 0 10px rgba(0,255,136,.1)}
+.btn-lime:hover{background:rgba(0,255,136,.08);border-color:var(--lime);box-shadow:0 0 20px rgba(0,255,136,.2);text-shadow:0 0 8px var(--lime)}
+.btn-magenta{color:var(--magenta);border-color:var(--mag-dim)}
+.btn-magenta:hover{background:rgba(255,0,128,.08);border-color:var(--magenta);box-shadow:0 0 16px rgba(255,0,128,.2)}
+.btn-cyan{color:var(--cyan);border-color:var(--cyan-dim)}
+.btn-cyan:hover{background:rgba(0,212,255,.08);border-color:var(--cyan);box-shadow:0 0 16px rgba(0,212,255,.2)}
+.btn-ghost{color:var(--text2);border-color:var(--border2);font-size:10px;padding:5px 10px}
+.btn-ghost:hover{color:var(--text);border-color:var(--text2)}
+.btn-full{width:100%}
+
+/* TERMINAL */
+.terminal{background:var(--black);border:1px solid var(--border2);margin-top:10px;display:none}
+.terminal.visible{display:block}
+.term-bar{display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid var(--border2);background:var(--panel)}
+.term-dot{width:7px;height:7px;border-radius:50%}
+.term-output{padding:10px 12px;font-size:10px;line-height:1.9;color:var(--lime2);white-space:pre-wrap;word-break:break-all;max-height:220px;overflow-y:auto;font-family:var(--mono)}
+.term-output::-webkit-scrollbar{width:3px}
+.term-output::-webkit-scrollbar-thumb{background:var(--border2)}
+.t-lime{color:var(--lime)}.t-mag{color:var(--magenta)}.t-cyan{color:var(--cyan)}.t-amb{color:var(--amber)}.t-red{color:var(--red)}.t-dim{color:var(--text2)}.t-white{color:var(--text)}
+
+/* ALERTS TABLE */
+.alerts-wrap{border:1px solid var(--border2);background:var(--panel);position:relative;overflow:hidden}
+.alerts-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--lime),var(--cyan),transparent)}
+.alerts-table{width:100%;border-collapse:collapse;font-size:11px}
+.alerts-table th{text-align:left;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);font-weight:400;padding:9px 12px;border-bottom:1px solid var(--border2);background:var(--black2)}
+.alerts-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle;transition:all .15s}
+.alerts-table tr:hover td{background:rgba(0,255,136,.02);color:var(--text)}
+.alerts-table tr:last-child td{border-bottom:none}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border:1px solid}
+.status-active{color:var(--lime);border-color:var(--lime-dim);background:rgba(0,255,136,.05)}
+.status-triggered{color:var(--magenta);border-color:var(--mag-dim);background:rgba(255,0,128,.05);animation:trig-flash 1s ease-in-out infinite}
+.status-cancelled{color:var(--text3);border-color:var(--border);background:transparent}
+@keyframes trig-flash{0%,100%{opacity:1}50%{opacity:.6}}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.asset-tag{font-family:var(--display);font-size:10px;font-weight:700;color:var(--cyan);letter-spacing:.08em}
+.empty-table{text-align:center;padding:3rem;color:var(--text3);font-size:11px;letter-spacing:.06em}
+
+/* VERDICT */
+.verdict-block{border:1px solid;padding:14px 16px;margin-top:12px;display:none;position:relative;overflow:hidden}
+.verdict-block.visible{display:block;animation:vb-in .3s ease}
+@keyframes vb-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.verdict-block.triggered{border-color:var(--magenta);background:rgba(255,0,128,.04);box-shadow:0 0 30px rgba(255,0,128,.08)}
+.verdict-block.pending{border-color:var(--lime-dim);background:rgba(0,255,136,.02)}
+.vb-label{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.verdict-block.triggered .vb-label{color:var(--magenta);text-shadow:0 0 12px rgba(255,0,128,.5)}
+.verdict-block.pending .vb-label{color:var(--lime)}
+.vb-reason{font-size:10px;color:var(--text2);line-height:1.7;letter-spacing:.02em}
+
+/* CONSENSUS */
+.consensus-panel{background:var(--black3);border:1px solid var(--border2);padding:1rem;margin-top:10px;display:none}
+.consensus-panel.visible{display:block}
+.cp-title{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);margin-bottom:10px}
+.node-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:10px}
+.node-row:last-child{border-bottom:none}
+.node-id{color:var(--cyan);min-width:130px}
+.node-model{color:var(--text2);flex:1;font-size:9px}
+.node-state{font-size:9px;letter-spacing:.06em}
+.node-state.waiting{color:var(--text3)}
+.node-state.thinking{color:var(--amber);animation:blink .8s infinite}
+.node-state.done{color:var(--lime)}
+
+/* RIGHT PANEL */
+.right-panel{border-left:1px solid var(--border2);background:var(--black2);display:flex;flex-direction:column;overflow:hidden}
+.rp-header{padding:10px 1rem;border-bottom:1px solid var(--border2);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);display:flex;justify-content:space-between;align-items:center}
+.rp-section{overflow-y:auto}
+.rp-section::-webkit-scrollbar{width:3px}
+.rp-section::-webkit-scrollbar-thumb{background:var(--border2)}
+.rp-sub-header{padding:8px 1rem;background:var(--panel);border-bottom:1px solid var(--border);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:flex;justify-content:space-between;align-items:center}
+.tx-entry{padding:8px 1rem;border-bottom:1px solid var(--border);animation:tx-slide .2s ease}
+@keyframes tx-slide{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+.tx-method{font-size:10px;color:var(--lime);margin-bottom:2px}
+.tx-detail{font-size:9px;color:var(--text2);display:flex;justify-content:space-between}
+.tx-ok{color:var(--lime2)}.tx-err{color:var(--red)}
+
+/* LIVE MARKET FEED */
+.feed-header-row{display:grid;grid-template-columns:52px 1fr 70px 56px;gap:4px;padding:5px 1rem;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
+.feed-row{display:grid;grid-template-columns:52px 1fr 70px 56px;align-items:center;gap:4px;padding:6px 1rem;border-bottom:1px solid var(--border);cursor:default;transition:background .1s;position:relative}
+.feed-row:hover{background:rgba(0,255,136,.025)}
+.feed-row.flash-up{animation:feed-flash-up .5s ease}
+.feed-row.flash-dn{animation:feed-flash-dn .5s ease}
+@keyframes feed-flash-up{0%{background:rgba(0,255,136,.15)}100%{background:transparent}}
+@keyframes feed-flash-dn{0%{background:rgba(255,51,68,.15)}100%{background:transparent}}
+.feed-sym{color:var(--cyan);font-family:var(--display);font-size:9px;font-weight:700}
+.feed-price{color:var(--lime);font-size:11px;font-weight:bold;text-align:right}
+.feed-chg{font-size:9px;text-align:right;font-weight:bold}
+.feed-vol{font-size:8px;color:var(--text3);text-align:right}
+.feed-spark{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--border)}
+.feed-spark-bar{height:100%;background:var(--lime2);transition:width .5s}
+
+.ws-badge{font-size:9px;padding:1px 6px;border:1px solid;letter-spacing:.06em}
+.ws-badge.live{color:var(--cyan);border-color:var(--cyan-dim);animation:blink 2s infinite}
+.ws-badge.connecting{color:var(--amber);border-color:var(--amb-dim)}
+.ws-badge.offline{color:var(--text3);border-color:var(--border)}
+
+.rp-footer{border-top:1px solid var(--border2);padding:6px 1rem;font-size:9px;color:var(--text3);letter-spacing:.04em;display:flex;justify-content:space-between}
+
+/* SPINNER */
+.spinner{width:12px;height:12px;border:1.5px solid var(--border2);border-top-color:var(--lime);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes alert-flash{0%{box-shadow:0 0 0 0 rgba(255,0,128,.6)}70%{box-shadow:0 0 0 12px rgba(255,0,128,0)}100%{box-shadow:0 0 0 0 rgba(255,0,128,0)}}
+.flash-triggered{animation:alert-flash .8s ease-out}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--black)}
+::-webkit-scrollbar-thumb{background:var(--border2)}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-mark"></div>
+    <div>
+      <div class="logo-text">AI MARKET SENTINEL</div>
+      <div class="logo-sub">GENLAYER · BINANCE LIVE FEED</div>
+    </div>
+  </div>
+
+  <div class="ticker-strip" id="ticker-strip">
+    <div class="ticker-item" id="tk-BTC"><div class="ticker-label">BTC/USDT</div><div class="ticker-val neu" id="tv-BTC">—</div><div class="ticker-chg neu" id="tc-BTC">—</div></div>
+    <div class="ticker-item" id="tk-ETH"><div class="ticker-label">ETH/USDT</div><div class="ticker-val neu" id="tv-ETH">—</div><div class="ticker-chg neu" id="tc-ETH">—</div></div>
+    <div class="ticker-item" id="tk-SOL"><div class="ticker-label">SOL/USDT</div><div class="ticker-val neu" id="tv-SOL">—</div><div class="ticker-chg neu" id="tc-SOL">—</div></div>
+    <div class="ticker-item" id="tk-BNB"><div class="ticker-label">BNB/USDT</div><div class="ticker-val neu" id="tv-BNB">—</div><div class="ticker-chg neu" id="tc-BNB">—</div></div>
+    <div class="ticker-item" id="tk-AVAX"><div class="ticker-label">AVAX/USDT</div><div class="ticker-val neu" id="tv-AVAX">—</div><div class="ticker-chg neu" id="tc-AVAX">—</div></div>
+  </div>
+
+  <div class="header-right">
+    <div style="display:flex;align-items:center;gap:5px;">
+      <div class="ws-dot" id="ws-dot"></div>
+      <span id="ws-label" style="font-size:9px;">CONNECTING</span>
+    </div>
+    <div class="node-status">
+      <div class="node-dot"></div>
+      <span>5/5 NODES</span>
+    </div>
+    <div class="clock" id="clock">00:00:00 UTC</div>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Operations</div>
+      <div class="nav-item active" onclick="nav('create',this)"><span class="nav-sym">+</span> Create Alert</div>
+      <div class="nav-item" onclick="nav('check',this)"><span class="nav-sym">▶</span> Run Sentinel</div>
+      <div class="nav-item" onclick="nav('inspect',this)"><span class="nav-sym">◎</span> Inspect Alert</div>
+      <div class="nav-item" onclick="nav('cancel',this)"><span class="nav-sym">✕</span> Cancel Alert</div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Registry</div>
+      <div class="nav-item" onclick="nav('alerts',this)"><span class="nav-sym">≡</span> All Alerts</div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sidebar-label" style="padding:0 1rem 8px">Contract State</div>
+    <div class="stat-list">
+      <div class="stat-row"><span class="stat-k">OWNER</span><span class="stat-v" id="cs-owner" style="font-size:9px">—</span></div>
+      <div class="stat-row"><span class="stat-k">TOTAL</span><span class="stat-v" id="cs-total">0</span></div>
+      <div class="stat-row"><span class="stat-k">ACTIVE</span><span class="stat-v" id="cs-active">0</span></div>
+      <div class="stat-row"><span class="stat-k">TRIGGERED</span><span class="stat-v mag" id="cs-triggered">0</span></div>
+      <div class="stat-row"><span class="stat-k">CANCELLED</span><span class="stat-v amb" id="cs-cancelled">0</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- CREATE -->
+    <div class="panel active" id="panel-create">
+      <div class="panel-header">
+        <div class="ph-left"><span class="ph-title">CREATE ALERT</span><span class="ph-cmd">create_intelligent_alert(asset, natural_language_intent)</span></div>
+        <span class="ph-badge">WRITE</span>
+      </div>
+      <div class="form-block">
+        <div class="fb-title">Alert Parameters</div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Asset Symbol</label>
+            <input type="text" id="ca-asset" value="BTC" placeholder="BTC, ETH, SOL...">
+          </div>
+          <div class="field">
+            <label class="field-label">Live Price</label>
+            <input type="text" id="ca-live-price" value="Fetching..." readonly style="color:var(--amber)">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Natural Language Intent</label>
+          <textarea id="ca-intent" placeholder="Describe your alert condition in plain English...">Alert me when Bitcoin shows signs of a major breakout above $100k with sustained volume and positive sentiment across major crypto news outlets.</textarea>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-lime" id="ca-btn" onclick="createAlert()">◈ create_intelligent_alert()</button>
+          <span id="ca-spinner" style="display:none"><span class="spinner"></span></span>
+        </div>
+      </div>
+      <div class="terminal" id="ca-terminal">
+        <div class="term-bar"><div class="term-dot" style="background:#ff3344"></div><div class="term-dot" style="background:#ffaa00"></div><div class="term-dot" style="background:#00ff88"></div><span style="font-size:9px;color:var(--text2);margin-left:6px;letter-spacing:.06em">GENVM OUTPUT</span></div>
+        <div class="term-output" id="ca-output"></div>
+      </div>
+    </div>
+
+    <!-- RUN SENTINEL -->
+    <div class="panel" id="panel-check">
+      <div class="panel-header">
+        <div class="ph-left"><span class="ph-title">RUN SENTINEL</span><span class="ph-cmd">process_sentinel_check(alert_id)</span></div>
+        <span class="ph-badge">WRITE · NON-DET</span>
+      </div>
+      <div class="form-block">
+        <div class="fb-title">Sentinel Parameters</div>
+        <div class="field">
+          <label class="field-label">Alert ID</label>
+          <input type="number" id="sc-id" placeholder="0" min="0">
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-magenta" id="sc-btn" onclick="runSentinel()">▶▶ process_sentinel_check()</button>
+          <span id="sc-spinner" style="display:none"><span class="spinner"></span></span>
+        </div>
+      </div>
+      <div class="consensus-panel" id="consensus-panel">
+        <div class="cp-title">◈ Validator Node Consensus Pool</div>
+        <div id="node-rows"></div>
+      </div>
+      <div class="terminal" id="sc-terminal">
+        <div class="term-bar"><div class="term-dot" style="background:#ff3344"></div><div class="term-dot" style="background:#ffaa00"></div><div class="term-dot" style="background:#00ff88"></div><span style="font-size:9px;color:var(--text2);margin-left:6px;letter-spacing:.06em">GENVM OUTPUT</span></div>
+        <div class="term-output" id="sc-output"></div>
+      </div>
+      <div class="verdict-block" id="sc-verdict"></div>
+    </div>
+
+    <!-- INSPECT -->
+    <div class="panel" id="panel-inspect">
+      <div class="panel-header">
+        <div class="ph-left"><span class="ph-title">INSPECT ALERT</span><span class="ph-cmd">inspect_alert_state(alert_id) · get_alert_meta(alert_id)</span></div>
+        <span class="ph-badge">VIEW</span>
+      </div>
+      <div class="form-block">
+        <div class="fb-title">Query Parameters</div>
+        <div style="display:flex;gap:10px;align-items:flex-end">
+          <div class="field" style="flex:1;margin-bottom:0"><label class="field-label">Alert ID</label><input type="number" id="ins-id" placeholder="0" min="0"></div>
+          <button class="btn btn-cyan" onclick="inspectAlert()">◎ inspect_alert_state()</button>
+        </div>
+      </div>
+      <div class="terminal" id="ins-terminal">
+        <div class="term-bar"><div class="term-dot" style="background:#ff3344"></div><div class="term-dot" style="background:#ffaa00"></div><div class="term-dot" style="background:#00ff88"></div><span style="font-size:9px;color:var(--text2);margin-left:6px;letter-spacing:.06em">VIEW CALL OUTPUT</span></div>
+        <div class="term-output" id="ins-output"></div>
+      </div>
+    </div>
+
+    <!-- CANCEL -->
+    <div class="panel" id="panel-cancel">
+      <div class="panel-header">
+        <div class="ph-left"><span class="ph-title">CANCEL ALERT</span><span class="ph-cmd">cancel_alert(alert_id)</span></div>
+        <span class="ph-badge">WRITE</span>
+      </div>
+      <div class="form-block">
+        <div class="fb-title">Cancel Parameters</div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Alert ID</label><input type="number" id="cx-id" placeholder="0" min="0"></div>
+          <div class="field"><label class="field-label">Sender (must be owner)</label><input type="text" id="cx-sender" placeholder="0xOwner..."></div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-magenta" id="cx-btn" onclick="cancelAlert()">✕ cancel_alert()</button>
+          <span id="cx-spinner" style="display:none"><span class="spinner"></span></span>
+        </div>
+      </div>
+      <div class="terminal" id="cx-terminal">
+        <div class="term-bar"><div class="term-dot" style="background:#ff3344"></div><div class="term-dot" style="background:#ffaa00"></div><div class="term-dot" style="background:#00ff88"></div><span style="font-size:9px;color:var(--text2);margin-left:6px;letter-spacing:.06em">GENVM OUTPUT</span></div>
+        <div class="term-output" id="cx-output"></div>
+      </div>
+    </div>
+
+    <!-- ALL ALERTS -->
+    <div class="panel" id="panel-alerts">
+      <div class="panel-header">
+        <div class="ph-left"><span class="ph-title">ALERT REGISTRY</span><span class="ph-cmd">get_total_alerts() · inspect_alert_state()</span></div>
+        <button class="btn btn-ghost" onclick="renderAlertsTable()">↻ REFRESH</button>
+      </div>
+      <div class="alerts-wrap" id="alerts-wrap"><div class="empty-table">NO ALERTS REGISTERED — CREATE ONE TO BEGIN</div></div>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="rp-header">
+      <span>TX LOG</span>
+      <button class="btn-ghost btn" onclick="txLog=[];renderTxLog()" style="border:none;color:var(--text3);font-size:9px">CLR</button>
+    </div>
+    <div class="rp-section" style="max-height:160px;border-bottom:1px solid var(--border2)">
+      <div id="tx-log-wrap"><div style="padding:1.5rem 1rem;text-align:center;color:var(--text3);font-size:10px;letter-spacing:.06em">AWAITING TRANSACTIONS</div></div>
+    </div>
+
+    <div class="rp-sub-header">
+      <span>BINANCE LIVE FEED</span>
+      <span class="ws-badge connecting" id="feed-badge">CONNECTING</span>
+    </div>
+    <div class="feed-header-row">
+      <span>PAIR</span><span style="text-align:right">PRICE</span><span style="text-align:right">24H CHG</span><span style="text-align:right">VOL</span>
+    </div>
+    <div class="rp-section" style="flex:1">
+      <div id="market-feed">
+        <div style="padding:2rem 1rem;text-align:center;color:var(--text3);font-size:10px">Connecting to Binance WebSocket…</div>
+      </div>
+    </div>
+
+    <div class="rp-footer">
+      <span>wss://data-stream.binance.vision</span>
+      <span id="last-update" style="color:var(--text3)">—</span>
+    </div>
+  </aside>
+</div>
+
+<script>
+// ── App State ──────────────────────────────────────────────────────────
+let alerts = [];
+let alertCounter = 0;
+let txLog = [];
+let owner = '0x' + Array.from({length:40},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+document.getElementById('cs-owner').textContent = owner.slice(0,8)+'…';
+document.getElementById('cx-sender').value = owner;
+
+// ── Clock ──────────────────────────────────────────────────────────────
+function updateClock(){document.getElementById('clock').textContent=new Date().toUTCString().slice(17,25)+' UTC'}
+updateClock(); setInterval(updateClock,1000);
+
+// ── Live Market Data via Binance WebSocket ─────────────────────────────
+const SYMBOLS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','AVAXUSDT','XRPUSDT','ADAUSDT','DOGEUSDT','MATICUSDT','ARBUSDT'];
+const DISPLAY = ['BTC','ETH','SOL','BNB','AVAX','XRP','ADA','DOGE','MATIC','ARB'];
+const HEADER_SYMS = ['BTC','ETH','SOL','BNB','AVAX']; // shown in header ticker
+
+let marketData = {};  // sym -> {price, open, high, low, vol, chg}
+let ws = null;
+let wsReconnectTimer = null;
+let priceHistory = {}; // sym -> last 20 prices for sparkline
+
+SYMBOLS.forEach(s => { priceHistory[s] = []; });
+
+function connectBinanceWS() {
+  const streams = SYMBOLS.map(s => s.toLowerCase()+'@miniTicker').join('/');
+  const url = `wss://data-stream.binance.vision/stream?streams=${streams}`;
+
+  setWsStatus('connecting');
+  try { ws = new WebSocket(url); } catch(e){ setWsStatus('error'); scheduleReconnect(); return; }
+
+  ws.onopen = () => {
+    setWsStatus('live');
+    if(wsReconnectTimer){ clearTimeout(wsReconnectTimer); wsReconnectTimer=null; }
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      const d = msg.data || msg;
+      if(!d || !d.s) return;
+      const sym = d.s; // e.g. BTCUSDT
+      const shortSym = sym.replace('USDT','');
+      const price = parseFloat(d.c);
+      const open  = parseFloat(d.o);
+      const high  = parseFloat(d.h);
+      const low   = parseFloat(d.l);
+      const vol   = parseFloat(d.v);
+      const chg   = ((price - open) / open) * 100;
+
+      const prev = marketData[sym] ? marketData[sym].price : null;
+      marketData[sym] = { price, open, high, low, vol, chg, shortSym };
+
+      // price history for mini sparkline
+      priceHistory[sym] = [...(priceHistory[sym]||[]), price].slice(-40);
+
+      // update header tickers
+      if(HEADER_SYMS.includes(shortSym)){
+        const tv = document.getElementById('tv-'+shortSym);
+        const tc = document.getElementById('tc-'+shortSym);
+        if(tv){
+          const dir = prev === null ? 'neu' : price > prev ? 'up' : price < prev ? 'dn' : 'neu';
+          tv.className = 'ticker-val '+dir;
+          tv.textContent = formatPrice(price, sym);
+        }
+        if(tc){
+          const cls = chg >= 0 ? 'up' : 'dn';
+          tc.className = 'ticker-chg '+cls;
+          tc.textContent = (chg>=0?'+':'')+chg.toFixed(2)+'%';
+        }
+      }
+
+      // update create-alert live price if asset matches
+      syncCreateAlertPrice();
+
+      // update feed row
+      updateFeedRow(sym, price, chg, vol, prev, priceHistory[sym]);
+
+      document.getElementById('last-update').textContent = new Date().toLocaleTimeString('en',{hour12:false});
+    } catch(err){}
+  };
+
+  ws.onerror = () => { setWsStatus('error'); };
+  ws.onclose = () => { setWsStatus('offline'); scheduleReconnect(); };
+}
+
+function scheduleReconnect(){
+  if(wsReconnectTimer) return;
+  wsReconnectTimer = setTimeout(()=>{ wsReconnectTimer=null; connectBinanceWS(); }, 4000);
+}
+
+function setWsStatus(state){
+  const dot   = document.getElementById('ws-dot');
+  const label = document.getElementById('ws-label');
+  const badge = document.getElementById('feed-badge');
+  if(state==='live'){
+    dot.className='ws-dot live'; label.textContent='LIVE';
+    badge.className='ws-badge live'; badge.textContent='LIVE';
+  } else if(state==='connecting'){
+    dot.className='ws-dot'; dot.style.background='var(--amber)';
+    label.textContent='CONNECTING';
+    badge.className='ws-badge connecting'; badge.textContent='CONNECTING';
+  } else {
+    dot.className='ws-dot err'; label.textContent='OFFLINE';
+    badge.className='ws-badge offline'; badge.textContent='OFFLINE';
+  }
+}
+
+function formatPrice(p, sym){
+  if(!p) return '—';
+  if(sym && (sym.includes('DOGE')||sym.includes('ADA')||sym.includes('MATIC'))) return '$'+p.toFixed(4);
+  if(p < 1)   return '$'+p.toFixed(6);
+  if(p < 10)  return '$'+p.toFixed(4);
+  if(p < 1000)return '$'+p.toFixed(2);
+  return '$'+p.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function formatVol(v){
+  if(!v||v===0) return '—';
+  if(v >= 1e9) return (v/1e9).toFixed(1)+'B';
+  if(v >= 1e6) return (v/1e6).toFixed(1)+'M';
+  if(v >= 1e3) return (v/1e3).toFixed(1)+'K';
+  return v.toFixed(0);
+}
+
+// Build feed rows on first data, then update in place
+let feedRowsBuilt = false;
+
+function buildFeedRows(){
+  const feed = document.getElementById('market-feed');
+  feed.innerHTML = SYMBOLS.map(sym => {
+    const s = sym.replace('USDT','');
+    return `<div class="feed-row" id="fr-${sym}">
+      <span class="feed-sym">${s}</span>
+      <span class="feed-price neu" id="fp-${sym}">—</span>
+      <span class="feed-chg neu" id="fc-${sym}">—</span>
+      <span class="feed-vol" id="fv-${sym}">—</span>
+      <div class="feed-spark"><div class="feed-spark-bar" id="fs-${sym}" style="width:0%"></div></div>
+    </div>`;
+  }).join('');
+  feedRowsBuilt = true;
+}
+
+function updateFeedRow(sym, price, chg, vol, prev, history){
+  if(!feedRowsBuilt) buildFeedRows();
+  const fp = document.getElementById('fp-'+sym);
+  const fc = document.getElementById('fc-'+sym);
+  const fv = document.getElementById('fv-'+sym);
+  const fs = document.getElementById('fs-'+sym);
+  const fr = document.getElementById('fr-'+sym);
+  if(!fp) return;
+
+  const dir = prev===null ? 'neu' : price > prev ? 'up' : price < prev ? 'dn' : 'neu';
+  fp.textContent = formatPrice(price, sym);
+  fp.className = 'feed-price ' + dir;
+
+  const chgCls = chg >= 0 ? 'up' : 'dn';
+  fc.textContent = (chg>=0?'+':'')+chg.toFixed(2)+'%';
+  fc.className = 'feed-chg ' + chgCls;
+
+  fv.textContent = formatVol(vol);
+
+  // Sparkline: show % of range covered in history
+  if(history && history.length > 1){
+    const mn = Math.min(...history), mx = Math.max(...history);
+    const pct = mx===mn ? 50 : ((price-mn)/(mx-mn))*100;
+    if(fs){ fs.style.width=pct+'%'; fs.style.background = chg>=0?'var(--lime2)':'var(--red)'; }
+  }
+
+  // Flash row on price change
+  if(prev !== null && price !== prev && fr){
+    fr.classList.remove('flash-up','flash-dn');
+    void fr.offsetWidth;
+    fr.classList.add(price > prev ? 'flash-up' : 'flash-dn');
+  }
+}
+
+function syncCreateAlertPrice(){
+  const asset = (document.getElementById('ca-asset').value||'').trim().toUpperCase();
+  const sym = asset + 'USDT';
+  const d = marketData[sym];
+  const el = document.getElementById('ca-live-price');
+  if(d && el) el.value = formatPrice(d.price, sym) + '  (' + (d.chg>=0?'+':'') + d.chg.toFixed(2) + '%)';
+}
+document.getElementById('ca-asset').addEventListener('input', syncCreateAlertPrice);
+
+// Start WebSocket
+buildFeedRows();
+connectBinanceWS();
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function nav(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='alerts') renderAlertsTable();
+}
+function now(){return new Date().toLocaleTimeString('en',{hour12:false})}
+function addTx(method,args,status,detail){txLog.unshift({method,args,status,detail,time:now()});renderTxLog()}
+function renderTxLog(){
+  const el=document.getElementById('tx-log-wrap');
+  if(!txLog.length) return;
+  el.innerHTML=txLog.slice(0,12).map(t=>`
+    <div class="tx-entry">
+      <div class="tx-method">${t.method}(${t.args})</div>
+      <div class="tx-detail">
+        <span class="${t.status==='ok'?'tx-ok':'tx-err'}">${t.status==='ok'?'✓ ACCEPTED':'✗ REVERTED'}</span>
+        <span style="color:var(--text3)">${t.time}</span>
+      </div>
+      ${t.detail?`<div style="font-size:9px;color:var(--text3);margin-top:2px">${t.detail}</div>`:''}
+    </div>`).join('');
+}
+function setLoading(id,on){
+  const btn=document.getElementById(id+'-btn');
+  const sp=document.getElementById(id+'-spinner');
+  if(btn) btn.disabled=on;
+  if(sp)  sp.style.display=on?'inline':'none';
+}
+function showTerm(id,lines){
+  const t=document.getElementById(id+'-terminal');
+  const o=document.getElementById(id+'-output');
+  t.classList.add('visible');
+  o.innerHTML=lines.map(([c,l])=>`<span class="${c}">${l}</span>\n`).join('');
+  o.scrollTop=0;
+}
+function appendTerm(id,lines){
+  const o=document.getElementById(id+'-output');
+  lines.forEach(([c,l])=>o.innerHTML+=`<span class="${c}">${l}</span>\n`);
+  o.scrollTop=o.scrollHeight;
+}
+function updateStats(){
+  const active=alerts.filter(a=>a.status==='Active').length;
+  const triggered=alerts.filter(a=>a.status==='Triggered').length;
+  const cancelled=alerts.filter(a=>a.status==='Cancelled').length;
+  document.getElementById('cs-total').textContent=alerts.length;
+  document.getElementById('cs-active').textContent=active;
+  document.getElementById('cs-triggered').textContent=triggered;
+  document.getElementById('cs-cancelled').textContent=cancelled;
+}
+function shortAddr(a){return a.slice(0,8)+'…'+a.slice(-6)}
+
+const NODES=[
+  {id:'0x4d2D27b0',model:'qwen/qwen3.6-plus'},
+  {id:'0x316254B2',model:'z-ai/glm-5.1'},
+  {id:'0xBfbC0616',model:'anthropic/claude-sonnet'},
+  {id:'0x61309C7e',model:'qwen/qwen3.6-max'},
+  {id:'0xf93f1743',model:'mistralai/mistral-medium'},
+];
+
+// ── Contract Simulation ────────────────────────────────────────────────
+function createAlert(){
+  const asset  = document.getElementById('ca-asset').value.trim().toUpperCase();
+  const intent = document.getElementById('ca-intent').value.trim();
+  if(!asset||!intent) return;
+
+  // get live price for display
+  const sym = asset+'USDT';
+  const livePrice = marketData[sym] ? formatPrice(marketData[sym].price, sym) : 'N/A';
+
+  setLoading('ca',true);
+  showTerm('ca',[
+    ['t-dim',`> genlayer write create_intelligent_alert --args '${asset}, ...'`],
+    ['t-amb','Broadcasting transaction to localnet…'],
+    ['t-dim',`  Live price at creation: ${livePrice}`],
+  ]);
+
+  setTimeout(()=>{
+    const aid=alertCounter++;
+    alerts.push({id:aid,asset,intent,owner,status:'Active',history:'Initialized. Awaiting first validator validation cycle.',created:now(),priceAtCreation:livePrice});
+    appendTerm('ca',[
+      ['t-lime','✓ Transaction accepted · state committed'],
+      ['t-dim', `  state["meta:${aid}"]    = {"owner":"${shortAddr(owner)}","asset":"${asset}",...}`],
+      ['t-dim', `  state["status:${aid}"]  = "Active"`],
+      ['t-dim', `  state["history:${aid}"] = "Initialized..."`],
+      ['t-dim', `  state["counter"]        = "${alertCounter}"`],
+      ['t-lime',`  → returned alert_id = ${aid}`],
+    ]);
+    setLoading('ca',false);
+    addTx('create_intelligent_alert',`"${asset}","..."`, 'ok',`id=${aid} @ ${livePrice}`);
+    updateStats(); renderAlertsTable();
+    document.getElementById('sc-id').value=aid;
+    document.getElementById('ins-id').value=aid;
+    document.getElementById('cx-id').value=aid;
+  },1400);
+}
+
+function runSentinel(){
+  const aid=parseInt(document.getElementById('sc-id').value);
+  if(isNaN(aid)) return;
+  const alert=alerts.find(a=>a.id===aid);
+  setLoading('sc',true);
+  document.getElementById('sc-verdict').className='verdict-block';
+  document.getElementById('sc-verdict').innerHTML='';
+
+  const cp=document.getElementById('consensus-panel');
+  cp.classList.add('visible');
+  document.getElementById('node-rows').innerHTML=NODES.map(n=>
+    `<div class="node-row" id="node-${n.id}">
+      <span class="node-id">${n.id}</span>
+      <span class="node-model">${n.model}</span>
+      <span class="node-state waiting" id="ns-${n.id}">WAITING</span>
+    </div>`).join('');
+
+  // fetch live price for the asset
+  const livePrice = alert ? (()=>{
+    const sym = alert.asset+'USDT';
+    const d = marketData[sym];
+    return d ? formatPrice(d.price, sym) + ' ('+( d.chg>=0?'+':'')+d.chg.toFixed(2)+'%)' : 'N/A';
+  })() : 'N/A';
+
+  showTerm('sc',[
+    ['t-dim', `> genlayer write process_sentinel_check --args '${aid}'`],
+    ['t-amb', 'Sending transaction…'],
+  ]);
+
+  if(!alert){
+    setTimeout(()=>{
+      appendTerm('sc',[['t-red',`✗ Exception: Alert does not exist.`]]);
+      setLoading('sc',false); addTx('process_sentinel_check',`${aid}`,'err','not found');
+      cp.classList.remove('visible');
+    },800); return;
+  }
+  if(alert.status!=='Active'){
+    setTimeout(()=>{
+      appendTerm('sc',[['t-red',`✗ Alert status is "${alert.status}" — only Active alerts can be checked.`]]);
+      setLoading('sc',false); addTx('process_sentinel_check',`${aid}`,'err',`status=${alert.status}`);
+      cp.classList.remove('visible');
+    },800); return;
+  }
+
+  setTimeout(()=>appendTerm('sc',[
+    ['t-amb','gl.nondet.web.render("https://api.coingecko.com/api/v3/search/trending") → fetching…'],
+    ['t-amb','gl.nondet.web.render("https://messari.io/rss/news.xml") → fetching…'],
+    ['t-dim',`  Live Binance price for ${alert.asset}: ${livePrice}`],
+  ]),400);
+
+  NODES.forEach((n,i)=>{
+    setTimeout(()=>{document.getElementById('ns-'+n.id).textContent='PROCESSING';document.getElementById('ns-'+n.id).className='node-state thinking';},800+i*700);
+    setTimeout(()=>{document.getElementById('ns-'+n.id).textContent='RESPONDED'; document.getElementById('ns-'+n.id).className='node-state done';},1400+i*700);
+  });
+
+  const totalDelay=1400+NODES.length*700+600;
+  setTimeout(()=>appendTerm('sc',[['t-amb','gl.eq_principle.get_eq_principle() → computing comparative consensus…'],['t-dim','  All 5 validators agree on constrained verdict token (TRIGGERED | PENDING)']]),totalDelay-800);
+
+  setTimeout(()=>{
+    const triggered=Math.random()<0.35;
+    const verdict=triggered
+      ?`TRIGGERED — Current news sentiment confirms strong bullish momentum for ${alert.asset} with sustained volume. Live price: ${livePrice}`
+      :`PENDING — Market conditions for ${alert.asset} do not yet meet the specified threshold. Current price: ${livePrice}. Awaiting further confirmation.`;
+    alert.history=verdict;
+    if(triggered) alert.status='Triggered';
+    const histEntry=JSON.stringify({verdict:triggered?'TRIGGERED':'PENDING',data_urls:['https://api.coingecko.com/api/v3/search/trending','https://messari.io/rss/news.xml']});
+    appendTerm('sc',[
+      ['t-dim',`  state["history:${aid}"] = ${histEntry.slice(0,80)}…`],
+      triggered?['t-mag',`  state["status:${aid}"]  = "Triggered"`]:['t-lime',`  state["status:${aid}"]  = "Active" (no change)`],
+      triggered?['t-mag','  → returned True']:['t-lime','  → returned False'],
+    ]);
+    const vEl=document.getElementById('sc-verdict');
+    if(triggered){
+      vEl.className='verdict-block visible triggered';
+      vEl.innerHTML=`<div class="vb-label">⚡ ALERT TRIGGERED</div><div class="vb-reason">${verdict.replace('TRIGGERED — ','')}</div>`;
+      vEl.classList.add('flash-triggered');
+    } else {
+      vEl.className='verdict-block visible pending';
+      vEl.innerHTML=`<div class="vb-label">◎ PENDING — CONDITIONS NOT MET</div><div class="vb-reason">${verdict.replace('PENDING — ','')}</div>`;
+    }
+    setLoading('sc',false);
+    addTx('process_sentinel_check',`${aid}`,'ok',triggered?'TRIGGERED':'PENDING');
+    updateStats(); renderAlertsTable();
+  },totalDelay);
+}
+
+function inspectAlert(){
+  const aid=parseInt(document.getElementById('ins-id').value);
+  const o=document.getElementById('ins-output');
+  const t=document.getElementById('ins-terminal');
+  t.classList.add('visible');
+  const alert=alerts.find(a=>a.id===aid);
+  const sym = alert ? alert.asset+'USDT' : null;
+  const live = sym && marketData[sym] ? formatPrice(marketData[sym].price, sym) : 'N/A';
+  if(!alert){
+    o.innerHTML=`<span class="t-dim">> inspect_alert_state(${aid})</span>\n<span class="t-amb">→ "Status: Non-Existent | AI Diagnostics: No record found."</span>\n`;
+    return;
+  }
+  const sc={Active:'t-lime',Triggered:'t-mag',Cancelled:'t-dim'}[alert.status]||'t-white';
+  o.innerHTML=[
+    `<span class="t-dim">> inspect_alert_state(${aid})</span>`,
+    `<span class="${sc}">Status: ${alert.status} | AI Diagnostics: ${alert.history.slice(0,80)}…</span>`,
+    ``,
+    `<span class="t-dim">> get_alert_meta(${aid})</span>`,
+    `<span class="t-cyan">{"owner":"${shortAddr(alert.owner)}","asset":"${alert.asset}","intent":"${alert.intent.slice(0,60)}…"}</span>`,
+    ``,
+    `<span class="t-dim">— full record —</span>`,
+    `<span class="t-dim">  id:               <span class="t-white">${alert.id}</span></span>`,
+    `<span class="t-dim">  asset:            <span class="t-white">${alert.asset}</span></span>`,
+    `<span class="t-dim">  live price now:   <span class="t-amb">${live}</span></span>`,
+    `<span class="t-dim">  price at create:  <span class="t-white">${alert.priceAtCreation||'N/A'}</span></span>`,
+    `<span class="t-dim">  status:           <span class="${sc}">${alert.status}</span></span>`,
+    `<span class="t-dim">  created:          <span class="t-white">${alert.created}</span></span>`,
+    `<span class="t-dim">  history:          <span class="t-white">${alert.history}</span></span>`,
+  ].join('\n');
+}
+
+function cancelAlert(){
+  const aid=parseInt(document.getElementById('cx-id').value);
+  const sender=document.getElementById('cx-sender').value.trim();
+  if(isNaN(aid)) return;
+  setLoading('cx',true);
+  showTerm('cx',[['t-dim',`> genlayer write cancel_alert --args '${aid}'`],['t-amb','Broadcasting transaction…']]);
+  setTimeout(()=>{
+    const alert=alerts.find(a=>a.id===aid);
+    if(!alert){appendTerm('cx',[['t-red','✗ Exception: Alert does not exist.']]);setLoading('cx',false);addTx('cancel_alert',`${aid}`,'err','not found');return;}
+    if(sender!==alert.owner){appendTerm('cx',[['t-red','✗ Exception: Only the alert owner can cancel this alert.']]);setLoading('cx',false);addTx('cancel_alert',`${aid}`,'err','wrong owner');return;}
+    if(alert.status!=='Active'){appendTerm('cx',[['t-red',`✗ Exception: Only active alerts can be cancelled. Status: ${alert.status}`]]);setLoading('cx',false);addTx('cancel_alert',`${aid}`,'err',`status=${alert.status}`);return;}
+    alert.status='Cancelled';
+    appendTerm('cx',[['t-lime','✓ Transaction accepted · state committed'],['t-dim',`  state["status:${aid}"] = "Cancelled"`],['t-lime','  → returned True']]);
+    setLoading('cx',false);addTx('cancel_alert',`${aid}`,'ok','Cancelled');
+    updateStats();renderAlertsTable();
+  },1100);
+}
+
+function renderAlertsTable(){
+  const el=document.getElementById('alerts-wrap');
+  if(!alerts.length){el.innerHTML=`<div class="empty-table">NO ALERTS REGISTERED — CREATE ONE TO BEGIN</div>`;return;}
+  el.innerHTML=`
+    <table class="alerts-table">
+      <thead><tr><th>ID</th><th>Asset</th><th>Live Price</th><th>Intent</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${alerts.map(a=>{
+        const sym=a.asset+'USDT';
+        const d=marketData[sym];
+        const price=d?formatPrice(d.price,sym):'—';
+        const chgCls=d?(d.chg>=0?'up':'dn'):'neu';
+        const chgStr=d?((d.chg>=0?'+':'')+d.chg.toFixed(2)+'%'):'—';
+        return `<tr>
+          <td style="color:var(--amber);font-weight:bold">#${a.id}</td>
+          <td><span class="asset-tag">${a.asset}</span></td>
+          <td><span class="${chgCls}" style="font-size:11px">${price}</span><br><span class="${chgCls}" style="font-size:9px">${chgStr}</span></td>
+          <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">${a.intent.slice(0,50)}…</td>
+          <td><div class="status-pill status-${a.status.toLowerCase()}"><span class="pill-dot"></span>${a.status.toUpperCase()}</div></td>
+          <td><div style="display:flex;gap:5px">
+            <button class="btn btn-ghost" onclick="quickCheck(${a.id})" title="Run sentinel">▶</button>
+            <button class="btn btn-ghost" onclick="quickInspect(${a.id})" title="Inspect">◎</button>
+            <button class="btn btn-ghost" onclick="quickCancel(${a.id})" title="Cancel">✕</button>
+          </div></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+// Refresh alerts table live prices every 3s if visible
+setInterval(()=>{
+  if(document.getElementById('panel-alerts').classList.contains('active')) renderAlertsTable();
+}, 3000);
+
+function quickCheck(id){document.getElementById('sc-id').value=id;document.querySelectorAll('.nav-item')[1].click();setTimeout(runSentinel,100)}
+function quickInspect(id){document.getElementById('ins-id').value=id;document.querySelectorAll('.nav-item')[2].click();setTimeout(inspectAlert,100)}
+function quickCancel(id){document.getElementById('cx-id').value=id;document.querySelectorAll('.nav-item')[3].click()}
+</script>
+</body>
+</html>
